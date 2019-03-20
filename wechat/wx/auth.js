@@ -3,11 +3,21 @@
 //引入sha1模块
 const sha1 = require('sha1');
 
+const rpa = require('request-promise-any');
+
+var request = require("request")
+
+
+
+
 //引入config模块
 const config = require('../config')
 
+console.log(config.password)
+
 //引入工具模块
 const {getUserDataAsync,formatData,parserXMLDataAsyc} = require('../utils/tool')
+
 
 module.exports = () =>{
 
@@ -93,29 +103,39 @@ module.exports = () =>{
         '</Image>' +
         '</xml>';
 
-        const replynews = '<xml>' +
+        var replynews = '<xml>' +
         '<ToUserName><![CDATA['+message.FromUserName +']]></ToUserName> ' +
         '<FromUserName><![CDATA['+ message.ToUserName+']]></FromUserName> ' +
         '<CreateTime>'+Date.now()+'</CreateTime> ' +
-        '<MsgType><![CDATA[news]]></MsgType>' +
-        ' <ArticleCount>1</ArticleCount>' +
-        '<Articles>'+
-          '<item>'+
-            '<Title><![CDATA[俊杰最强图文标题2]]></Title>' +
-            '<Description><![CDATA[最强图文介绍]]></Description>' +
-            '<PicUrl><![CDATA[https://wx1.sinaimg.cn/mw690/8913d77egy1fqdgtoo9vtj20bz0by0tx.jpg]]></PicUrl>' +
-            '<Url><![CDATA[http://robot.dgut.edu.cn/]]></Url>' +
-          '</item>' +
-        '</Articles>' +
-        '</xml>';
+        '<MsgType><![CDATA[news]]></MsgType>' ;
         
+
          //返回相应给服务器
          //UnhandledPromiseRejectionWarning: Error: Can't set headers after they are sent.
         // res.send(replyMessage) 
-        res.send(replynews)   
-        //    res.end('')
+        // res.send(replynews)   
+        //  res.end('')
 
+          request("http://4b027f7f.ap.ngrok.io/materials/getLatest?catalogName=%E5%85%AC%E5%8F%B8%E5%8A%A8%E6%80%81", {json: true}, (err, result, body) => {
+            if(err){return console.log(err)}
 
+            replynews +=  ' <ArticleCount>' + body.length + '</ArticleCount>' ;
+            replynews += '<Articles>';
+            for(i = 0; i < body.length; i++){
+                replynews += 
+                    '<item>'+
+                        '<Title><![CDATA['+ body[i]['title'] +']]></Title>' +
+                        '<Description><![CDATA['+ body[i]['description'] +']]></Description>' +
+                        '<PicUrl><![CDATA['+ body[i]['picUrl'] + ']]></PicUrl>' +
+                        '<Url><![CDATA['+ body[i]['url'] +']]></Url>' +
+                    '</item>' ;
+            }
+                
+            replynews = replynews + '</Articles></xml>';
+            console.log(replynews)
+            res.send(replynews)   
+
+        })   
 
         }  else {
            res.end('error')

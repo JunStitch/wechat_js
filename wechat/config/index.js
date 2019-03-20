@@ -11,4 +11,10 @@ module.exports = {
     appID: 'wxbd984493f1f30a26',
     appsecret: '9218e0a149be5699597bda2b5cf3d2e7',
 
+    /* 数据库参数 */
+    host : "localhost",
+    user : 'root',
+    password: 'root',
+    port : '3306',
+    database: 'zxyy',
 }

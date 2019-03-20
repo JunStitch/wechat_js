@@ -9,8 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "ajax-request": "^1.2.3",
     "express": "^4.16.4",
+    "mysql": "^2.16.0",
     "request": "^2.88.0",
+    "request-promise-any": "^1.0.7",
     "request-promise-native": "^1.0.7",
     "sha1": "^1.1.1",
     "xml2js": "^0.4.19"

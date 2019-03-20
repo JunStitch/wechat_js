@@ -10,4 +10,4 @@ const app = express();
 app.use(auth())
 
 // 监听端口号
-app.listen(8080, () => console.log('服务器启动成功了~'))
+app.listen(80, () => console.log('服务器启动成功了~'))
