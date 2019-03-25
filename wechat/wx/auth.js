@@ -3,17 +3,15 @@
 //引入sha1模块
 const sha1 = require('sha1');
 
-const rpa = require('request-promise-any');
-
 var request = require("request")
 
+var wechat = require('./wechat')
 
 
 
 //引入config模块
 const config = require('../config')
 
-console.log(config.password)
 
 //引入工具模块
 const {getUserDataAsync,formatData,parserXMLDataAsyc} = require('../utils/tool')
@@ -36,14 +34,16 @@ module.exports = () =>{
     
         //测试服务器发送方式
         if (req.method === 'GET'){
-            console.log('get')
+            console.log('用户返回get操作')
             //验证消息是否来自服务器
            if (sha1Str===signature) {
+               console.log("成功首次连接")
                res.send(echostr)
            } else {
                res.end('error')
            }
         }  else if (req.method === 'POST'){
+            console.log('用户返回post操作')
             //验证消息是否来自服务器
             if (sha1Str !== signature) {
                res.end('error')
@@ -73,69 +73,70 @@ module.exports = () =>{
         //    console.log(message.FromUserName)
 
         let content = '测试返回内容';
-        if (message.MsgType === 'text') {
-            if (message.Content === '1') {   //全匹配
-                content = '俊杰超强'
-            } else if (message.Content === '2') {
-                content = 'helloworld'
-            }
-            else if (message.Content.match('jj')) {  //半匹配
-                content = 'jj在此';
-            }
-            
+        let url = 'http://909e4577.ap.ngrok.io';
+
+        if (message.MsgType === 'text'){
+            content = "你都发了什么东西呀？";
+
+            const replyMessage = '<xml>' +
+            '<ToUserName><![CDATA['+message.FromUserName +']]></ToUserName> ' +
+            '<FromUserName><![CDATA['+ message.ToUserName+']]></FromUserName> ' +
+            '<CreateTime>'+Date.now()+'</CreateTime> ' +
+            '<MsgType><![CDATA[text]]></MsgType>' +
+            ' <Content><![CDATA['+ content+']]></Content> ' +
+            '</xml>';
+            res.send(replyMessage) 
+
         }
-      
-        const replyMessage = '<xml>' +
-        '<ToUserName><![CDATA['+message.FromUserName +']]></ToUserName> ' +
-        '<FromUserName><![CDATA['+ message.ToUserName+']]></FromUserName> ' +
-        '<CreateTime>'+Date.now()+'</CreateTime> ' +
-        '<MsgType><![CDATA[text]]></MsgType>' +
-        ' <Content><![CDATA['+ content+']]></Content> ' +
-        '</xml>';
+        else if (message.MsgType === 'event' && message.Event === "CLICK") {
+            
+            if(message.EventKey === "COMPANY_ACTIVITY"){
+                content = "公司活动";
+                // url += '/materials/getLatest?catalogName=公司活动';
+            }
+            else if (message.EventKey === "COMPANY_NEWS"){
+                content = "公司动态";
+                // url += '/materials/getLatest?catalogName=公司动态';
+            }
+            else if (message.EventKey === "SOLUTIONS"){
+                content = "解决方案";
+                // url += '/materials/getLatest?catalogName=解决方案';
+            }
+            url += '/materials/getLatest?catalogName=' + encodeURI(content);
 
-        const replyImage = '<xml>' +
-        '<ToUserName><![CDATA['+message.FromUserName +']]></ToUserName> ' +
-        '<FromUserName><![CDATA['+ message.ToUserName+']]></FromUserName> ' +
-        '<CreateTime>'+Date.now()+'</CreateTime> ' +
-        '<MsgType><![CDATA[image]]></MsgType>' +
-        '<Image>'+
-            '<MediaId><![CDATA[BARMcCcHZLxfDUa4zZ1micck7XA38y6C6jHVgcuZSrYDAnKL5A5y_idFMo6qBHz9]]></MediaId>'+
-        '</Image>' +
-        '</xml>';
+            var replynews = '<xml>' +
+            '<ToUserName><![CDATA['+message.FromUserName +']]></ToUserName> ' +
+            '<FromUserName><![CDATA['+ message.ToUserName+']]></FromUserName> ' +
+            '<CreateTime>'+Date.now()+'</CreateTime> ' +
+            '<MsgType><![CDATA[news]]></MsgType>' ;
 
-        var replynews = '<xml>' +
-        '<ToUserName><![CDATA['+message.FromUserName +']]></ToUserName> ' +
-        '<FromUserName><![CDATA['+ message.ToUserName+']]></FromUserName> ' +
-        '<CreateTime>'+Date.now()+'</CreateTime> ' +
-        '<MsgType><![CDATA[news]]></MsgType>' ;
-        
+            request(url, {json: true}, (err, result, body) => {
+                if(err){return console.log(err)}
 
-         //返回相应给服务器
+                replynews +=  ' <ArticleCount>' + body.length + '</ArticleCount>' ;
+                replynews += '<Articles>';
+                for(i = 0; i < body.length; i++){
+                    replynews += 
+                        '<item>'+
+                            '<Title><![CDATA['+ body[i]['title'] +']]></Title>' +
+                            '<Description><![CDATA['+ body[i]['description'] +']]></Description>' +
+                            '<PicUrl><![CDATA['+ body[i]['picUrl'] + ']]></PicUrl>' +
+                            '<Url><![CDATA['+ body[i]['url'] +']]></Url>' +
+                        '</item>' ;
+                }
+                    
+                replynews = replynews + '</Articles></xml>';
+                console.log(replynews)
+                res.send(replynews)   
+            })   
+
+        } 
+         
+        //返回相应给服务器
          //UnhandledPromiseRejectionWarning: Error: Can't set headers after they are sent.
         // res.send(replyMessage) 
         // res.send(replynews)   
         //  res.end('')
-
-          request("http://4b027f7f.ap.ngrok.io/materials/getLatest?catalogName=%E5%85%AC%E5%8F%B8%E5%8A%A8%E6%80%81", {json: true}, (err, result, body) => {
-            if(err){return console.log(err)}
-
-            replynews +=  ' <ArticleCount>' + body.length + '</ArticleCount>' ;
-            replynews += '<Articles>';
-            for(i = 0; i < body.length; i++){
-                replynews += 
-                    '<item>'+
-                        '<Title><![CDATA['+ body[i]['title'] +']]></Title>' +
-                        '<Description><![CDATA['+ body[i]['description'] +']]></Description>' +
-                        '<PicUrl><![CDATA['+ body[i]['picUrl'] + ']]></PicUrl>' +
-                        '<Url><![CDATA['+ body[i]['url'] +']]></Url>' +
-                    '</item>' ;
-            }
-                
-            replynews = replynews + '</Articles></xml>';
-            console.log(replynews)
-            res.send(replynews)   
-
-        })   
 
         }  else {
            res.end('error')
